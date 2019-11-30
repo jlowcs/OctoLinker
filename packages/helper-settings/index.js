@@ -5,6 +5,7 @@ const store = {};
 const defaults = {
   enablePrivateRepositories: true,
   showUpdateNotification: true,
+  absolutePathsConfig: '',
 };
 
 export const get = key => {
@@ -46,3 +47,22 @@ export const load = async () => {
 
   return store;
 };
+
+export const getAbsolutePathsConfig = () => {
+  const config = get('absolutePathsConfig');
+  return config
+    .split(/\n/g)
+    .map((line) => line.replace(/\s/g, ''))
+    .filter((line) => line && !!line.match(/^[^:\/]+\/[^:\/]+:([^:]+:\/[^:]+)(;([^:]+:\/[^:]+))*$/))
+    .map((line) => {
+      const [_m, repository, configs] = line.match(/^([^:]+)+:(.*)$/);
+      return {
+        repository,
+        configs: configs
+          .split(';')
+          .map((config) => config.split(':'))
+          .map(([path, target]) => ({ path, target }))
+      };
+    })
+  ;
+}

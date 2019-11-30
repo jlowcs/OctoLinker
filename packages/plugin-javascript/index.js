@@ -8,6 +8,7 @@ import {
 import liveResolverQuery from '@octolinker/resolver-live-query';
 import resolverTrustedUrl from '@octolinker/resolver-trusted-url';
 import builtinsDocs from './builtins-docs.js';
+import * as storage from '@octolinker/helper-settings';
 
 function getTopModuleName(target) {
   const isScoped = target.startsWith('@');
@@ -84,6 +85,31 @@ export default {
     const isPath = !!target.match(/^\.\.?[\\|\/]?/);
     if (isPath) {
       return javascriptFile({ target, path });
+    }
+    
+    const absoluteConfigs = storage.getAbsolutePathsConfig();
+    
+    const repo = path.replace(/^\/([^\/]+\/[^\/]+).*$/, '$1');
+    const absoluteConfig = absoluteConfigs.find((config) => config.repository === repo);
+    if (absoluteConfig) {
+      const baseAbsPath = path.replace(/(^.*\/blob\/[^\/]*)\/.*$/, '$1');
+      const computed = absoluteConfig.configs.reduce((res, config) => {
+        // path: /OctoLinker/OctoLinker/blob/xxx/packages/yyy/currentFile.js
+        // target: @octolinker/plugin-html
+        // config.path: @octolinker
+        // config.target: /packages
+        if (target === config.path || target.startsWith(config.path + '/')) {
+          const computedTarget = target.substring(config.path.length + 1); // => plugin-html
+          const computedPath = `${baseAbsPath}${config.target}/`.replace(/\/*$/, ''); // => /OctoLinker/OctoLinker/blob/xxx/packages
+          if (!res || computedPath.split('/').length > res.path.split('/').length) {
+            return { target: computedTarget, path: computedPath };
+          }
+        }
+        return res;
+      }, undefined);
+      if (computed) {
+        return javascriptFile({ target: computed.target ? `./${computed.target}` : '.', path: `${computed.path}/index.js` });
+      }
     }
 
     target = target.replace(/[^\w-.!~*'()@/]/g, '');

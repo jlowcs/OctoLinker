@@ -73,7 +73,7 @@ export default class Form extends Component {
   }
 
   render(props, state) {
-    const { errorMessage, tokenLoaded } = this.state;
+    const { errorMessage, tokenLoaded, absolutePathsConfig } = this.state;
 
     return (
       <form
@@ -171,6 +171,12 @@ export default class Form extends Component {
           checked={state.showUpdateNotification}
           onClick={linkState(this, 'showUpdateNotification')}
         />
+        Absolute paths config (JavaScript/TypeScript):
+        <textarea
+          style="min-width: 400px; max-width: 400px; height: 100px;"
+          onInput={linkState(this, 'absolutePathsConfig')}
+          placeholder="facebook/react: myPath:/myPath; moOtherPath:/
+          OctoLinker/OctoLinker: @octolinker:/packages">{state.absolutePathsConfig}</textarea>
       </form>
     );
   }
